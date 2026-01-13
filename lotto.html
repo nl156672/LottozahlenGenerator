@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lottozahlen-Generator (einfach)</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main>
+    <h1>Dein persönlicher Lottozahlengenereator ;)</h1>
+    <div class="display">
+      <div id="nums" class="nums"></div>
+      <div id="super" class="super">-</div>
+    </div>
+    <div class="controls">
+      <button id="generate">Generieren</button>
+      <button id="clear">Verlauf löschen</button>
+      <button id="export">Export (JSON)</button>
+    </div>
+    <h2>Verlauf</h2>
+    <ul id="history" class="history"></ul>
+    <footer>Erstellt: Offline, direkt im Browser. Zufallsquelle: Web Crypto API.</footer>
+  </main>
+
+  <script>
+    // Utilities
+    function randUint(maxExclusive){
+      // returns integer in [0, maxExclusive)
+      const r = new Uint32Array(1);
+      window.crypto.getRandomValues(r);
+      return r[0] % maxExclusive;
+    }
+
+    function randomIntInclusive(min, max){ return min + randUint(max - min + 1); }
+
+    function isValidCombination(numbers){
+      if (!Array.isArray(numbers) || numbers.length !== 6) return false;
+      const uniq = new Set(numbers);
+      if (uniq.size !== 6) return false;
+      if (numbers.some(n=>n<1||n>49)) return false;
+      const s = numbers.slice().sort((a,b)=>a-b);
+      let maxSeq = 1, cur = 1;
+      for (let i=1;i<s.length;i++){
+        if (s[i]===s[i-1]+1){ cur++; maxSeq = Math.max(maxSeq, cur); } else cur=1;
+      }
+      if (maxSeq>2) return false; // zu lange aufeinanderfolgende Sequenz vermeiden
+      if (!s.some(n=>n>31)) return false; // vermeide ausschließlich Geburtstagszahlen
+      return true;
+    }
+
+    function generateCombination(){
+      // retry until valid (bounded attempts)
+      for (let attempt=0; attempt<100; attempt++){
+        const set = new Set();
+        while (set.size<6) set.add(randomIntInclusive(1,49));
+        const nums = Array.from(set).sort((a,b)=>a-b);
+        const superz = randomIntInclusive(0,9);
+        if (isValidCombination(nums)) return {numbers: nums, super: superz};
+      }
+      return {numbers:[3,11,22,29,34,45], super: randomIntInclusive(0,9)};
+    }
+
+    // DOM
+    const numsEl = document.getElementById('nums');
+    const superEl = document.getElementById('super');
+    const histEl = document.getElementById('history');
+    const genBtn = document.getElementById('generate');
+    const clearBtn = document.getElementById('clear');
+    const exportBtn = document.getElementById('export');
+
+    function loadHistory(){
+      try{ const j = localStorage.getItem('lotto_history'); return j?JSON.parse(j):[] }catch{ return [] }
+    }
+    function saveHistory(h){ localStorage.setItem('lotto_history', JSON.stringify(h)); }
+
+    function renderHistory(){
+      histEl.innerHTML='';
+      const h = loadHistory();
+      for (let i=h.length-1;i>=0;i--){
+        const li = document.createElement('li');
+        li.textContent = `${h[i].numbers.join(', ')} | S:${h[i].super}`;
+        histEl.appendChild(li);
+      }
+    }
+
+    function appendHistory(item){
+      const h = loadHistory();
+      // avoid duplicates (exact)
+      const key = item.numbers.join(',')+'|'+item.super;
+      if (!h.some(x=>x.numbers.join(',')+'|'+x.super===key)){
+        h.push(item);
+        // limit
+        while(h.length>500) h.shift();
+        saveHistory(h);
+      }
+      renderHistory();
+    }
+
+    function animateAndShow(result){
+      numsEl.innerHTML='';
+      const slots = [];
+      for (let i=0;i<6;i++){ const d=document.createElement('div'); d.className='ball'; d.textContent='-'; numsEl.appendChild(d); slots.push(d); }
+      superEl.textContent='-';
+      const start = performance.now();
+      const durations = slots.map((_,i)=>800 + i*220);
+      function frame(now){
+        const t = now - start;
+        for (let i=0;i<slots.length;i++){
+          if (t > durations[i]) slots[i].textContent = result.numbers[i];
+          else slots[i].textContent = String(randomIntInclusive(1,49));
+        }
+        if (t > durations[durations.length-1]+180){ superEl.textContent = result.super; }
+        else { superEl.textContent = String(randomIntInclusive(0,9)); }
+        if (t < durations[durations.length-1]+400) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    genBtn.addEventListener('click', ()=>{
+      const res = generateCombination();
+      animateAndShow(res);
+      appendHistory(res);
+      // small celebration
+      if (window.startConfetti) window.startConfetti();
+    });
+
+    clearBtn.addEventListener('click', ()=>{ localStorage.removeItem('lotto_history'); renderHistory(); });
+
+    exportBtn.addEventListener('click', ()=>{
+      const h = loadHistory();
+      const blob = new Blob([JSON.stringify(h, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'lotto_history.json'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // initial render
+    renderHistory();
+
+    // --------------------- Konfetti ---------------------
+    (function(){
+      const canvas = document.createElement('canvas');
+      canvas.id = 'confetti-canvas';
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+
+      function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+      resize(); window.addEventListener('resize', resize);
+
+      function createBurst(x,y,count=80){
+        const colors = ['#ff66b2','#ff4a94','#ffc0e6'];
+        for(let i=0;i<count;i++){
+          particles.push({
+            x: x || window.innerWidth/2,
+            y: y || window.innerHeight/3,
+            vx: (Math.random()-0.5)*8,
+            vy: Math.random()*-10 - 2,
+            size: Math.random()*8 + 6,
+            rot: Math.random()*360,
+            vr: (Math.random()-0.5)*10,
+            color: colors[Math.floor(Math.random()*colors.length)]
+          });
+        }
+      }
+
+      let rafId = null;
+      let last = 0;
+      function frame(ts){
+        if (!last) last = ts;
+        const dt = Math.min(60, ts - last)/16.666;
+        last = ts;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.vy += 0.35 * dt; // gravity
+          p.x += p.vx * dt * 1.2;
+          p.y += p.vy * dt * 1.2;
+          p.rot += p.vr * dt;
+          if (p.y > canvas.height + 60) { particles.splice(i,1); continue; }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot * Math.PI/180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+          ctx.restore();
+        }
+        if (particles.length > 0) rafId = requestAnimationFrame(frame); else { rafId = null; last = 0; ctx.clearRect(0,0,canvas.width,canvas.height); }
+      }
+
+      function startConfetti(){
+        createBurst(window.innerWidth/2, window.innerHeight/3, 90);
+        if (!rafId) rafId = requestAnimationFrame(frame);
+      }
+
+      window.startConfetti = startConfetti;
+    })();
+  </script>
+</body>
+</html>

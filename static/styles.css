@@ -1,0 +1,41 @@
+:root{--bg:#1c1d1f;--card:#0f2430;--accent:#ff4a94;--accent-strong:#ff4a94;--text:#e6f0ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial;background:linear-gradient(180deg,#eedce6,#ffb6db);color:#352a31;min-height:100vh;display:flex;align-items:center;justify-content:center}
+main{width:720px;padding:24px;background:linear-gradient(180deg, rgba(238,220,230,0.12), rgba(255,182,219,0.10));border-radius:12px;border:1px solid rgba(255,74,148,0.08);box-shadow:0 8px 30px rgba(0,0,0,0.55)}
+main{width:720px;padding:24px;background:linear-gradient(180deg, rgba(238,220,230,0.12), rgba(255,182,219,0.10));border-radius:12px;border:1px solid rgba(255,74,148,0.08);box-shadow:0 8px 30px rgba(0,0,0,0.55);color:#352a31}
+h1{margin:0 0 12px}
+.display{display:flex;gap:16px;align-items:center;margin:12px 0}
+.nums{display:flex;gap:10px}
+.nums .ball{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#ffdff0,#ffcde6);color:#2b0820;font-weight:800;font-size:18px;border:2px solid rgba(255,74,148,0.18);box-shadow:0 10px 30px rgba(255,74,148,0.12);transition:transform .18s ease,box-shadow .18s ease}
+.nums .ball:hover{transform:translateY(-6px);box-shadow:0 18px 44px rgba(255,74,148,0.18)}
+.super{width:72px;height:72px;border-radius:8px;background:linear-gradient(180deg,var(--accent),var(--accent-strong));color:#0b0b10;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 8px 30px rgba(255,102,178,0.12)}
+.controls{display:flex;gap:10px;margin-bottom:12px}
+button{padding:10px 14px;border-radius:8px;border:1px solid rgba(255,102,178,0.06);background:rgba(255,255,255,0.02);color:var(--text);cursor:pointer}
+button:hover{border-color:rgba(255,102,178,0.15);box-shadow:0 6px 18px rgba(255,102,178,0.04)}
+button:active{transform:translateY(1px)}
+/* Heller rosa Generate-Button */
+button#generate{
+	background: linear-gradient(180deg,#eedce6,#ffb6db);
+	color:#352a31;
+	border:1px solid rgba(255,74,148,0.18);
+	box-shadow:0 8px 22px rgba(255,74,148,0.08);
+}
+button#generate:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(255,74,148,0.12)}
+button#generate:active{transform:translateY(0)}
+/* Heller rosa Button für Clear und Export */
+button#clear, button#export{
+  background: linear-gradient(180deg,#eedce6,#ffb6db);
+  color:#352a31;
+  border:1px solid rgba(255,74,148,0.18);
+  box-shadow:0 8px 22px rgba(255,74,148,0.08);
+}
+button#clear:hover, button#export:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(255,74,148,0.12)}
+button#clear:active, button#export:active{transform:translateY(0)}
+.history{list-style:none;padding:0;margin:0;max-height:160px;overflow:auto}
+.history li{padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.02);margin-bottom:6px;font-family:monospace}
+.accent-text{color:var(--accent)}
+footer{margin-top:12px;font-size:12px;opacity:0.8}
+footer{margin-top:12px;font-size:12px;opacity:0.8;color:#352a31}
+
+/* Konfetti-Canvas */
+#confetti-canvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:9999}
